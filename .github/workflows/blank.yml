@@ -1,58 +1,58 @@
-name: Laravel CI/CD
+name: Laravel CI Pipeline
 
 on:
   push:
-    branches:
-      - main
+    paths:
+      - 'laravel-app/**'
   pull_request:
-    branches:
-      - main
+    paths:
+      - 'laravel-app/**'
 
 jobs:
-  laravel:
+  build-and-test:
+    name: Build and Test Laravel
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:latest
-        ports:
-          - 5432:5432
-        env:
-          POSTGRES_DB: your_db_name
-          POSTGRES_USER: your_db_user
-          POSTGRES_PASSWORD: your_db_password
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.0'
+
+      - name: Install Composer dependencies
+        run: composer install
+        working-directory: ./laravel-app
+
+      - name: Run Laravel tests
+        run: php artisan test
+        working-directory: ./laravel-app
+
+  docker-build-and-push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    needs: build-and-test
 
     steps:
-    - uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Set up PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.0'
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-    - name: Install dependencies
-      run: composer install
+      - name: Build Docker image
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/laravel-app:latest ./laravel-app
 
-    - name: Copy .env.example to .env
-      run: cp .env.example .env
+      - name: Push Docker image
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/laravel-app:latest
 
-    - name: Generate application key
-      run: php artisan key:generate
+  notify-cd:
+    name: Notify ArgoCD
+    runs-on: ubuntu-latest
+    needs: docker-build-and-push
 
-    - name: Run migrations
-      env:
-        DB_HOST: 127.0.0.1
-        DB_PORT: 5432
-        DB_DATABASE: your_db_name
-        DB_USERNAME: your_db_user
-        DB_PASSWORD: your_db_password
-      run: php artisan migrate --force
-
-    - name: Run tests
-      env:
-        DB_HOST: 127.0.0.1
-        DB_PORT: 5432
-        DB_DATABASE: your_db_name
-        DB_USERNAME: your_db_user
-        DB_PASSWORD: your_db_password
-      run: php artisan test
+    steps:
+      - name: Trigger ArgoCD Sync
+        run: curl -X POST https://<argocd-server>/api/v1/applications/laravel-app/sync -H "Authorization: Bearer ${{ secrets.ARGOCD_TOKEN }}"
