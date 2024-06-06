@@ -55,5 +55,5 @@ jobs:
 
     steps:
       - name: Trigger ArgoCD Sync
-      - run: echo "argocd step"
+        run: echo "argocd step"
         # run: curl -X POST https://<argocd-server>/api/v1/applications/laravel-app/sync -H "Authorization: Bearer ${{ secrets.ARGOCD_TOKEN }}"
