@@ -101,7 +101,7 @@ jobs:
   build_image:
     name: Build Docker Image
     runs-on: ubuntu-latest
-    needs: dast
+    needs: [sast, dast]
 
     steps:
       - name: Checkout repository
