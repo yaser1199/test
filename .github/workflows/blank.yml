@@ -2,8 +2,8 @@ name: Laravel CI Pipeline
 
 on:
   push:
-    paths:
-      - 'laravel-app/**'
+    # paths:
+      # - 'laravel-app/**'
   pull_request:
     paths:
       - 'laravel-app/**'
