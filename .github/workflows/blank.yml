@@ -1,12 +1,10 @@
 name: Laravel CI Pipeline
 
 on:
-  push:
-    # paths:
-      # - 'laravel-app/**'
-  pull_request:
-    paths:
-      - 'laravel-app/**'
+    push:
+      branches: [ "main" ]
+    pull_request:
+      branches: [ "main" ]
 
 jobs:
   build-and-test:
